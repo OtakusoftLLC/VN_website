@@ -14,6 +14,7 @@
       --muted: #a1a1aa;
       --accent: #7cfc5a;  /* electric lime */
       --accent-2: #00d4ff;/* cyan pop */
+      --glass-blue: 32 96 220; /* rgb for blue glass tint */
       --grid: 12;         
       --radius: 18px;
 
@@ -42,6 +43,17 @@
     }
     img, svg, video { max-width: 100%; display: block; }
 
+    /* ===== Fixed background video for pixel-art reels ===== */
+    .bg { position: fixed; inset: 0; overflow: hidden; z-index: -1; }
+    .bg-video {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      /* Some engines ignore this on <video>, but harmless to set */
+      image-rendering: pixelated; image-rendering: crisp-edges;
+    }
+    .vignette { position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(120% 100% at 50% 0%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.55) 100%);
+    }
+
     .container { 
       width: min(1200px, 92vw);
       margin-inline: auto;
@@ -59,22 +71,29 @@
       .grid-2 { grid-template-columns: repeat(2, 1fr); }
     }
 
-    .nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px);
-      background: color-mix(in oklab, var(--bg) 80%, transparent);
-      border-bottom: 1px solid color-mix(in oklab, var(--fg) 12%, transparent);
+    /* ===== Glassmorphic nav over video ===== */
+    .nav {
+      position: sticky; top: 0; z-index: 10;
+      -webkit-backdrop-filter: blur(12px) saturate(120%);
+      backdrop-filter: blur(12px) saturate(120%);
+      background: rgba(var(--glass-blue) / 0.18);
+      border-bottom: 1px solid rgba(255 255 255 / 0.25);
     }
     .nav__row { display: flex; align-items: center; justify-content: space-between; padding: calc(var(--grid) * 1.25) 0; }
     .brand { font-size: var(--step-1); font-weight: 700; letter-spacing: .02em; }
     .brand em { color: var(--accent); font-style: normal; }
-    .nav a { text-decoration: none; color: var(--fg); opacity: .85; }
+    .nav a { text-decoration: none; color: var(--fg); opacity: .92; }
     .nav a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
     .menu { display: none; }
     .menu-btn {
       appearance: none; border: 0; background: var(--fg); color: var(--bg);
       padding: 10px 14px; border-radius: 999px; font-weight: 700; cursor: pointer;
     }
-    @media (max-width: 860px) {
-      .menu { display: block; }
+    /* Motion toggle button matches nav controls */
+    .motion-btn { margin-left: 10px; appearance: none; border: 0; border-radius: 999px; padding: 10px 14px; font-weight: 700; cursor: pointer; color: #0e0e10; background: rgba(255,255,255,.9); }
+
+    @media (max-width: 980px) {
+      .menu { display: inline-block; }
       .links { display: none; }
       .links[aria-expanded="true"] { display: grid; gap: calc(var(--grid) * 1.25); padding: calc(var(--grid) * 1.25) 0; }
     }
@@ -94,31 +113,47 @@
       background: linear-gradient(120deg, color-mix(in oklab, var(--accent) 22%, transparent), transparent); color: var(--fg); text-decoration: none; font-weight: 700; transition: transform .08s ease; }
     .cta:hover { transform: translateY(-1px); }
     .card { border: 1.5px solid color-mix(in oklab, var(--fg) 14%, transparent); border-radius: var(--radius); padding: calc(var(--grid) * 2);
-      background: linear-gradient(180deg, color-mix(in oklab, var(--fg) 3%, transparent), transparent); transition: transform .12s ease, border-color .12s ease; }
+      background: linear-gradient(180deg, color-mix(in oklab, var(--fg) 3%, transparent), transparent); transition: transform .12s ease, border-color .12s ease; backdrop-filter: blur(0.25px); }
     .card:hover { transform: translateY(-2px); border-color: var(--accent-2); }
     .card h3 { font-size: var(--step-2); margin: 0 0 .3em; }
     .card p { color: var(--muted); }
 
     footer { padding: calc(var(--grid) * 4) 0; color: var(--muted); font-size: var(--step--1); }
 
+    /* Fallback if backdrop-filter isn’t available */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .nav { background: rgba(var(--glass-blue) / 0.55); }
+      .card { background: color-mix(in oklab, var(--fg) 4%, transparent); }
+    }
+
+    /* Respect users who prefer less motion */
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
+      .bg-video { display: none; }
+      .bg { background: url('/media/home-poster.jpg') center/cover no-repeat; }
     }
   </style>
 </head>
 <body>
-  <header class="nav">
+  <!-- Pixel-art video background (swap per route via JS) -->
+  <div class="bg" aria-hidden="true">
+    <video id="bgVideo" class="bg-video" playsinline autoplay muted loop poster="/media/home-poster.jpg" src="/media/home-loop.webm"></video>
+    <div class="vignette"></div>
+  </div>
+
+  <header class="nav" role="banner">
     <div class="container nav__row">
       <a class="brand" href="#home" data-link="home">
         Otaku<span style="color:var(--accent-2)">—</span><em>soft</em>
       </a>
-      <nav>
+      <nav aria-label="Primary">
         <button class="menu-btn menu" aria-controls="nav-links" aria-expanded="false">Menu</button>
         <div id="nav-links" class="links cluster">
           <a href="#work" data-link="work">Projects</a>
           <a href="#lab" data-link="lab">Technology</a>
           <a href="#about" data-link="about">About</a>
           <a href="#contact" data-link="contact" class="cta">Contact</a>
+          <button id="motionToggle" class="motion-btn" aria-pressed="false" aria-label="Pause background">Pause</button>
         </div>
       </nav>
     </div>
@@ -237,10 +272,35 @@
   </noscript>
 
   <script>
+    // ===== Client-side router + background video swap per route =====
     const routes = { home: '#tpl-home', work: '#tpl-work', lab: '#tpl-lab', about: '#tpl-about', contact: '#tpl-contact' };
+    const bgByRoute = {
+      home:   { src: '/media/home-loop.webm', poster: '/media/home-poster.jpg' },
+      work:   { src: '/media/work-loop.webm', poster: '/media/work-poster.jpg' },
+      lab:    { src: '/media/lab-loop.webm', poster: '/media/lab-poster.jpg' },
+      about:  { src: '/media/about-loop.webm', poster: '/media/about-poster.jpg' },
+      contact:{ src: '/media/contact-loop.webm', poster: '/media/contact-poster.jpg' }
+    };
 
     const app = document.getElementById('app');
     const linksEl = document.getElementById('nav-links');
+    const vid = document.getElementById('bgVideo');
+    const motionBtn = document.getElementById('motionToggle');
+
+    function swapBackground(route){
+      const conf = bgByRoute[route] || bgByRoute.home;
+      if (!conf) return;
+      // Only swap if different to avoid stutter
+      const needSrc = conf.src && vid.getAttribute('src') !== conf.src;
+      const needPoster = conf.poster && vid.getAttribute('poster') !== conf.poster;
+      if (needPoster) vid.setAttribute('poster', conf.poster);
+      if (needSrc) {
+        vid.setAttribute('src', conf.src);
+        vid.load();
+        // Best effort autoplay without throwing
+        vid.play?.().catch(()=>{});
+      }
+    }
 
     function mount(templateSelector) {
       const tpl = document.querySelector(templateSelector) || document.querySelector('#tpl-404');
@@ -261,6 +321,7 @@
       const tplSel = routes[route] || '#tpl-404';
       mount(tplSel);
       setActive(route);
+      swapBackground(route);
       if (push) history.pushState({ route }, '', route === 'home' ? '#home' : '#' + route);
     }
 
@@ -268,7 +329,7 @@
       const a = e.target.closest('a[data-link]');
       if (!a) return;
       const route = a.dataset.link;
-      if (route) { e.preventDefault(); go(route); if (window.innerWidth < 860) toggleMenu(false); }
+      if (route) { e.preventDefault(); go(route); if (window.innerWidth < 980) toggleMenu(false); }
     });
 
     window.addEventListener('popstate', (e) => {
@@ -286,6 +347,17 @@
       btn.setAttribute('aria-expanded', String(open));
     }
     btn?.addEventListener('click', () => toggleMenu());
+
+    // Background motion toggle
+    function setPaused(paused){
+      if (!vid) return;
+      if (paused) { vid.pause(); motionBtn.textContent = 'Play'; motionBtn.setAttribute('aria-pressed','true'); }
+      else { vid.play?.().catch(()=>{}); motionBtn.textContent = 'Pause'; motionBtn.setAttribute('aria-pressed','false'); }
+    }
+    motionBtn?.addEventListener('click', () => setPaused(!vid.paused));
+
+    // Save battery: pause when tab hidden
+    document.addEventListener('visibilitychange', () => { if (document.hidden) vid.pause(); else vid.play?.().catch(()=>{}); });
 
     document.getElementById('y').textContent = new Date().getFullYear();
   </script>
