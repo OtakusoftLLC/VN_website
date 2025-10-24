@@ -1,1 +1,293 @@
-testing html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Otakusoft — Visual Novel Studio</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <style>
+    /* ====== Design tokens (make it yours) ====== */
+    :root {
+      --bg: #0e0e10;
+      --fg: #e8e8ea;
+      --muted: #a1a1aa;
+      --accent: #7cfc5a;  /* electric lime */
+      --accent-2: #00d4ff;/* cyan pop */
+      --grid: 12;         
+      --radius: 18px;
+
+      --step--1: clamp(0.78rem, 0.69rem + 0.36vw, 0.94rem);
+      --step-0:  clamp(0.94rem, 0.82rem + 0.58vw, 1.15rem);
+      --step-1:  clamp(1.15rem, 0.95rem + 0.96vw, 1.44rem);
+      --step-2:  clamp(1.44rem, 1.09rem + 1.56vw, 1.80rem);
+      --step-3:  clamp(1.80rem, 1.24rem + 2.49vw, 2.25rem);
+      --step-4:  clamp(2.25rem, 1.38rem + 3.95vw, 2.81rem);
+    }
+    @media (prefers-color-scheme: light) {
+      :root { --bg: #f7f7f7; --fg: #111114; --muted: #3a3a40; }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.4;
+      letter-spacing: .01em;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+    img, svg, video { max-width: 100%; display: block; }
+
+    .container { 
+      width: min(1200px, 92vw);
+      margin-inline: auto;
+      padding: calc(var(--grid) * 2) 0;
+      container-type: inline-size;
+    }
+    .stack > * + * { margin-top: calc(var(--grid) * 2); }
+    .cluster {
+      display: flex; flex-wrap: wrap; gap: calc(var(--grid) * 1.5);
+      align-items: center;
+    }
+    .grid { display: grid; gap: calc(var(--grid) * 2); grid-template-columns: repeat(12, 1fr); }
+    @container (min-width: 720px) {
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px);
+      background: color-mix(in oklab, var(--bg) 80%, transparent);
+      border-bottom: 1px solid color-mix(in oklab, var(--fg) 12%, transparent);
+    }
+    .nav__row { display: flex; align-items: center; justify-content: space-between; padding: calc(var(--grid) * 1.25) 0; }
+    .brand { font-size: var(--step-1); font-weight: 700; letter-spacing: .02em; }
+    .brand em { color: var(--accent); font-style: normal; }
+    .nav a { text-decoration: none; color: var(--fg); opacity: .85; }
+    .nav a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+    .menu { display: none; }
+    .menu-btn {
+      appearance: none; border: 0; background: var(--fg); color: var(--bg);
+      padding: 10px 14px; border-radius: 999px; font-weight: 700; cursor: pointer;
+    }
+    @media (max-width: 860px) {
+      .menu { display: block; }
+      .links { display: none; }
+      .links[aria-expanded="true"] { display: grid; gap: calc(var(--grid) * 1.25); padding: calc(var(--grid) * 1.25) 0; }
+    }
+
+    .links a.active { border-bottom: 2px solid var(--accent-2); padding-bottom: 2px; }
+
+    main { min-height: 60vh; }
+    #app:focus { outline: none; }
+    .view { opacity: 0; transform: translateY(6px); }
+    .view.in { opacity: 1; transform: none; transition: opacity .22s ease, transform .22s ease; }
+
+    .hero { padding: calc(var(--grid) * 6) 0 calc(var(--grid) * 4); border-bottom: 1px solid color-mix(in oklab, var(--fg) 12%, transparent); }
+    .kicker { color: var(--muted); text-transform: uppercase; letter-spacing: .12em; font-size: var(--step--1); }
+    h1 { font-size: clamp(2.6rem, 2.2rem + 2vw, 5.2rem); line-height: .95; margin: .3em 0 .2em; font-weight: 800; text-wrap: balance; }
+    .sublead { font-size: var(--step-1); color: var(--muted); max-width: 70ch; }
+    .cta { display: inline-flex; align-items: center; gap: 10px; padding: 14px 20px; border-radius: var(--radius); border: 2px solid var(--accent);
+      background: linear-gradient(120deg, color-mix(in oklab, var(--accent) 22%, transparent), transparent); color: var(--fg); text-decoration: none; font-weight: 700; transition: transform .08s ease; }
+    .cta:hover { transform: translateY(-1px); }
+    .card { border: 1.5px solid color-mix(in oklab, var(--fg) 14%, transparent); border-radius: var(--radius); padding: calc(var(--grid) * 2);
+      background: linear-gradient(180deg, color-mix(in oklab, var(--fg) 3%, transparent), transparent); transition: transform .12s ease, border-color .12s ease; }
+    .card:hover { transform: translateY(-2px); border-color: var(--accent-2); }
+    .card h3 { font-size: var(--step-2); margin: 0 0 .3em; }
+    .card p { color: var(--muted); }
+
+    footer { padding: calc(var(--grid) * 4) 0; color: var(--muted); font-size: var(--step--1); }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav__row">
+      <a class="brand" href="#home" data-link="home">
+        Otaku<span style="color:var(--accent-2)">—</span><em>soft</em>
+      </a>
+      <nav>
+        <button class="menu-btn menu" aria-controls="nav-links" aria-expanded="false">Menu</button>
+        <div id="nav-links" class="links cluster">
+          <a href="#work" data-link="work">Projects</a>
+          <a href="#lab" data-link="lab">Technology</a>
+          <a href="#about" data-link="about">About</a>
+          <a href="#contact" data-link="contact" class="cta">Contact</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" class="container" role="main" tabindex="-1" aria-live="polite"></main>
+
+  <footer class="container">
+    © <span id="y"></span> Otakusoft. All rights reserved.
+  </footer>
+
+  <!-- ====== Templates ====== -->
+  <template id="tpl-home">
+    <section class="view">
+      <section class="hero stack">
+        <p class="kicker">Visual Novel Studio</p>
+        <h1>We craft worlds through story and code.</h1>
+        <p class="sublead">Otakusoft creates high-quality visual novels powered by the Ren’Py engine and Python, designed for desktop, Android, and the web. Our stories fuse interactive art with deep world-building — most notably in <em>Pantheon Reborn</em>.</p>
+        <a class="cta" href="#work" data-link="work">Explore Our Work →</a>
+      </section>
+
+      <section class="stack">
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>Ren’Py Expertise</h3>
+            <p>We build branching narratives, dynamic UI, and polished gameplay systems entirely in Ren’Py and Python.</p>
+          </article>
+          <article class="card">
+            <h3>Cross-Platform Ports</h3>
+            <p>Our team optimizes every project for Windows, macOS, Android, and HTML5, ensuring performance and accessibility everywhere.</p>
+          </article>
+          <article class="card">
+            <h3>Narrative Engineering</h3>
+            <p>From script logic to cinematic timing, we merge storytelling and software to create emotionally resonant experiences.</p>
+          </article>
+        </div>
+      </section>
+    </section>
+  </template>
+
+  <template id="tpl-work">
+    <section class="view stack">
+      <h1>Projects</h1>
+      <p class="sublead">Our signature work and ongoing titles in development.</p>
+      <div class="grid grid-2">
+        <article class="card">
+          <h3>Pantheon Reborn</h3>
+          <p>A post-utopian sci-fantasy visual novel exploring divinity, memory, and collective consciousness. Built in Ren’Py with custom Python extensions and adaptive scene logic.</p>
+        </article>
+        <article class="card">
+          <h3>Upcoming Titles</h3>
+          <p>We are developing new original IPs, focusing on visual novels that combine high-fidelity art, moral complexity, and technical depth.</p>
+        </article>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-lab">
+    <section class="view stack">
+      <h1>Technology</h1>
+      <p class="sublead">Our technical foundation powers rich storytelling and immersive experiences.</p>
+      <div class="grid grid-2">
+        <article class="card">
+          <h3>Python + Ren’Py</h3>
+          <p>We extend Ren’Py with Python scripting for complex state management, custom engines, and performance tuning.</p>
+        </article>
+        <article class="card">
+          <h3>Web & Android Ports</h3>
+          <p>Otakusoft engineers handle full deployment pipelines — from PC builds to APK signing and HTML5 exports — ensuring seamless cross-device storytelling.</p>
+        </article>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-about">
+    <section class="view stack">
+      <h1>About Otakusoft</h1>
+      <p class="sublead">We are an independent visual novel studio dedicated to the craft of interactive storytelling and technical excellence.</p>
+      <div class="grid grid-2">
+        <article class="card">
+          <h3>Who We Are</h3>
+          <p>Otakusoft develops and publishes visual novels that blend narrative, philosophy, and aesthetics. Our team includes industry veterans and emerging talents who believe storytelling and code are one art form.</p>
+        </article>
+        <article class="card">
+          <h3>Leadership</h3>
+          <p>Studio leadership includes <strong>Happiness+</strong>, coding intern turned <strong>Programming Director of Watercress Studios</strong>, the <strong>former governor of Fuwanovel</strong>, <strong>former senior writer of Nachi Game</strong>, and <strong>founder of Hentai Cooperative LLC</strong>.</p>
+        </article>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-contact">
+    <section class="view stack">
+      <h1>Contact</h1>
+      <p class="sublead">Collaborate with us. We partner with artists, writers, and studios to bring ambitious visual novels to life.</p>
+      <form class="stack" onsubmit="event.preventDefault(); alert('Pretend we sent this.');">
+        <label>Name<br><input required style="width:100%; padding:12px; border-radius:12px; border:1px solid color-mix(in oklab, var(--fg) 20%, transparent); background: transparent; color: var(--fg);"></label>
+        <label>Email<br><input type="email" required style="width:100%; padding:12px; border-radius:12px; border:1px solid color-mix(in oklab, var(--fg) 20%, transparent); background: transparent; color: var(--fg);"></label>
+        <label>Message<br><textarea rows="5" required style="width:100%; padding:12px; border-radius:12px; border:1px solid color-mix(in oklab, var(--fg) 20%, transparent); background: transparent; color: var(--fg);"></textarea></label>
+        <button class="cta" type="submit">Send</button>
+      </form>
+    </section>
+  </template>
+
+  <template id="tpl-404">
+    <section class="view stack">
+      <h1>Not Found</h1>
+      <p class="sublead">That route doesn’t exist. Try the <a href="#home" data-link="home">home</a> page.</p>
+    </section>
+  </template>
+
+  <noscript>
+    <div class="container" style="margin-top:2rem">
+      <p class="sublead">This site uses a small amount of JavaScript to display page views without reloads. Enable JS to explore.</p>
+    </div>
+  </noscript>
+
+  <script>
+    const routes = { home: '#tpl-home', work: '#tpl-work', lab: '#tpl-lab', about: '#tpl-about', contact: '#tpl-contact' };
+
+    const app = document.getElementById('app');
+    const linksEl = document.getElementById('nav-links');
+
+    function mount(templateSelector) {
+      const tpl = document.querySelector(templateSelector) || document.querySelector('#tpl-404');
+      app.innerHTML = '';
+      const node = tpl.content.cloneNode(true);
+      app.appendChild(node);
+      const view = app.querySelector('.view');
+      requestAnimationFrame(() => view?.classList.add('in'));
+      const h1 = app.querySelector('h1, [role="heading"]');
+      if (h1) { h1.setAttribute('tabindex','-1'); h1.focus({ preventScroll: false }); }
+    }
+
+    function setActive(route) {
+      document.querySelectorAll('[data-link]').forEach(a => a.classList.toggle('active', a.dataset.link === route));
+    }
+
+    function go(route, push = true) {
+      const tplSel = routes[route] || '#tpl-404';
+      mount(tplSel);
+      setActive(route);
+      if (push) history.pushState({ route }, '', route === 'home' ? '#home' : '#' + route);
+    }
+
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[data-link]');
+      if (!a) return;
+      const route = a.dataset.link;
+      if (route) { e.preventDefault(); go(route); if (window.innerWidth < 860) toggleMenu(false); }
+    });
+
+    window.addEventListener('popstate', (e) => {
+      const route = e.state?.route || (location.hash.replace('#','') || 'home');
+      go(route, false);
+    });
+
+    const initial = (location.hash.replace('#','') || 'home');
+    go(initial, false);
+
+    const btn = document.querySelector('.menu-btn');
+    function toggleMenu(force) {
+      const open = force ?? (linksEl.getAttribute('aria-expanded') !== 'true');
+      linksEl.setAttribute('aria-expanded', String(open));
+      btn.setAttribute('aria-expanded', String(open));
+    }
+    btn?.addEventListener('click', () => toggleMenu());
+
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
